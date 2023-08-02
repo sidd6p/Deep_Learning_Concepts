@@ -82,9 +82,9 @@ def test_run(model, criterion, data_loader, is_cuda):
             class_correct[label] += (1 if pred[i] == label else 0)
             class_total[label] += 1
     
-    test_loss = test_loss/len(test_loader.dataset)
+    test_loss = test_loss/len(data_loader.dataset)
     
-    return test_loss, preds, actuals, class_correct, class_totat
+    return test_loss, preds, actuals, class_correct, class_total
 
 
 def plot_loss(losses, epochs):
