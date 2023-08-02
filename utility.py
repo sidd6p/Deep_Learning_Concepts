@@ -4,7 +4,9 @@
 
 import matplotlib.pyplot as plt
 
-def run(model, epochs, optimizer, criterion, data_loader, is_cuda, mode):
+from tqdm import tqdm
+
+def run(model, optimizer, criterion, data_loader, is_cuda, mode):
     if is_cuda:
         model.cuda()
     
@@ -18,7 +20,7 @@ def run(model, epochs, optimizer, criterion, data_loader, is_cuda, mode):
     for batch_idx, (data, target) in tqdm(
         enumerate(data_loader),
         desc=mode,
-        total = len(data_loader),
+        total=len(data_loader),
         leave=True,
         ncols=80
     ):
