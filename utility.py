@@ -1,6 +1,7 @@
 # %% [code]
 # %% [code]
 # %% [code]
+# %% [code]
 
 import matplotlib.pyplot as plt
 
@@ -36,9 +37,8 @@ def run(model, optimizer, criterion, data_loader, is_cuda, mode):
         epoch_loss += loss.item()*data.size(0)
     
     return epoch_loss/ len(data_loader.dataset)
-        
-    
 
+        
 
 def plot_loss(losses, epochs):
     plt.figure(figsize=(8, 5))
