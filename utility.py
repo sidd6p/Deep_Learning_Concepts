@@ -6,6 +6,7 @@
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
+import torch 
 
 def run(model, optimizer, criterion, data_loader, is_cuda, mode):
     if is_cuda:
