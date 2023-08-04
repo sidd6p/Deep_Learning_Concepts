@@ -27,13 +27,7 @@ def run(model, optimizer, criterion, data_loader, is_cuda, mode):
 
     epoch_loss = 0.0
 
-    for batch_idx, (data, target) in tqdm(
-            enumerate(data_loader),
-            desc=mode,
-            total=len(data_loader),
-            leave=True,
-            ncols=80
-    ):
+    for batch_idx, (data, target) in enumerate(data_loader):
         if is_cuda:
             data, target = data.cuda(), target.cuda()
 
@@ -104,6 +98,39 @@ def test_run(model, criterion, data_loader, is_cuda):
     test_loss = test_loss / len(data_loader.dataset)  # Calculate average test loss
 
     return test_loss, preds, actuals, class_correct, class_total
+
+
+def train(model, epochs, train_loader, optimizer, criterion, is_cuda=False):
+    
+    val_loss_min = None
+    losses = list()
+    
+
+    for epoch in tqdm(
+            range(epochs),
+            desc="Epochs",
+            total=epochs,
+            leave=True,
+            ncols=80
+        ):
+        train_loss = utility.run(
+            model=model, 
+            optimizer=optimizer, 
+            criterion=criterion,
+            data_loader=train_loader, 
+            is_cuda=is_cuda, 
+            mode="Train"
+        )
+        print(
+            "Epoch: {} \tTraining Loss: {:.6f} ".format(
+                epoch + 1, train_loss
+            )
+        ) 
+        
+        
+        losses.append(train_loss)
+        
+    return losses
 
 
 def plot_loss(losses, epochs):
