@@ -1,3 +1,4 @@
+# %% [code]
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -113,7 +114,7 @@ def train(model, epochs, train_loader, optimizer, criterion, is_cuda=False):
             leave=True,
             ncols=80
         ):
-        train_loss = utility.run(
+        train_loss = run(
             model=model, 
             optimizer=optimizer, 
             criterion=criterion,
