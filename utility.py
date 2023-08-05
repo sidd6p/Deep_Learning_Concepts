@@ -1,10 +1,11 @@
 # %% [code]
 # %% [code]
+# %% [code]
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-def run(model, optimizer, criterion, data_loader, is_cuda, mode):
+def run(model, criterion, data_loader, mode, optimizer=None, is_cuda=None):
     """
     Run one epoch of training or validation.
 
