@@ -1,4 +1,5 @@
 # %% [code]
+# %% [code]
 import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
@@ -101,37 +102,35 @@ def test_run(model, criterion, data_loader, is_cuda):
     return test_loss, preds, actuals, class_correct, class_total
 
 
-def train(model, epochs, train_loader, optimizer, criterion, is_cuda=False):
-    
-    val_loss_min = None
-    losses = list()
-    
+def train(model, epochs, train_loader, optimizer, criterion, val_loader=None, is_cuda=False):
+    val_losses = []
+    losses = []
 
-    for epoch in tqdm(
-            range(epochs),
-            desc="Epochs",
-            total=epochs,
-            leave=True,
-            ncols=80
-        ):
+    for epoch in tqdm(range(epochs), desc="Epochs", total=epochs, leave=True, ncols=80):
         train_loss = run(
-            model=model, 
-            optimizer=optimizer, 
+            model=model,
+            optimizer=optimizer,
             criterion=criterion,
-            data_loader=train_loader, 
-            is_cuda=is_cuda, 
+            data_loader=train_loader,
+            is_cuda=is_cuda,
             mode="Train"
         )
-        print(
-            "Epoch: {} \tTraining Loss: {:.6f} ".format(
-                epoch + 1, train_loss
-            )
-        ) 
-        
-        
         losses.append(train_loss)
         
-    return losses
+        if val_loader:
+            val_loss = run(
+                model=model,
+                criterion=criterion,
+                data_loader=val_loader,
+                is_cuda=is_cuda,
+                mode="Val"
+            )
+            val_losses.append(val_loss)
+            print("Epoch: {} \Validation Loss: {:.6f}".format(epoch + 1, train_loss))
+            
+        print("Epoch: {} \tTraining Loss: {:.6f}".format(epoch + 1, train_loss))
+    
+    return losses, val_losses
 
 
 def plot_loss(losses, epochs):
