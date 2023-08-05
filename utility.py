@@ -5,17 +5,18 @@ import torch
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-def run(model, criterion, data_loader, mode, optimizer=None, is_cuda=None):
+
+def run_epoch(model, criterion, data_loader, mode, optimizer=None, is_cuda=None):
     """
-    Run one epoch of training or validation.
+    Run a single epoch of training or validation.
 
     Args:
         model (torch.nn.Module): The neural network model.
-        optimizer (torch.optim.Optimizer): The optimizer for updating model weights.
         criterion (torch.nn.Module): The loss function.
         data_loader (torch.utils.data.DataLoader): DataLoader for loading batches of data.
-        is_cuda (bool): Whether to use GPU for computation.
         mode (str): Either "Train" or "Val" to indicate training or validation mode.
+        optimizer (torch.optim.Optimizer, optional): The optimizer for updating model weights.
+        is_cuda (bool, optional): Whether to use GPU for computation.
 
     Returns:
         float: The average loss for the epoch.
@@ -44,23 +45,33 @@ def run(model, criterion, data_loader, mode, optimizer=None, is_cuda=None):
 
         epoch_loss += loss.item() * data.size(0)  # Accumulate loss
 
-    return epoch_loss / len(data_loader.dataset)  # Return average loss
+    return epoch_loss / len(data_loader.dataset)  # Return the average loss for the epoch
+
 
 
 def test_run(model, criterion, data_loader, is_cuda):
     """
-    Run the model on the test dataset for evaluation.
+    Evaluate a model's performance on a given dataset using the specified criterion.
 
     Args:
-        model (torch.nn.Module): The neural network model.
-        criterion (torch.nn.Module): The loss function.
-        data_loader (torch.utils.data.DataLoader): DataLoader for loading test data.
-        is_cuda (bool): Whether to use GPU for computation.
+        model (torch.nn.Module): The neural network model to be evaluated.
+        criterion: The loss function used to compute the evaluation loss.
+        data_loader (torch.utils.data.DataLoader): DataLoader for the evaluation dataset.
+        is_cuda (bool): A flag indicating whether to use GPU (CUDA) for evaluation.
 
     Returns:
-        tuple: A tuple containing test loss, predicted labels, actual labels,
-               correct predictions per class, and total samples per class.
+        tuple: A tuple containing evaluation results and statistics.
+            - test_loss (float): Average loss computed over the evaluation dataset.
+            - preds (list): List of predicted labels for each evaluation sample.
+            - actuals (list): List of true labels for each evaluation sample.
+            - class_correct (list): List of counts of correctly predicted samples per class.
+            - class_total (list): List of total samples per class in the evaluation dataset.
+
+    Note:
+        This function assumes that the model has been properly initialized and trained before evaluation.
+        It computes the average loss, predicted labels, true labels, and per-class statistics for the evaluation dataset.
     """
+    # Initialize per-class correct prediction and total sample counts
     class_correct = [0 for _ in range(10)]
     class_total = [0 for _ in range(10)]
     test_loss = 0
@@ -71,9 +82,10 @@ def test_run(model, criterion, data_loader, is_cuda):
     with torch.no_grad():
         model.eval()  # Set the model in evaluation mode
 
-        preds = []
-        actuals = []
+        preds = []  # List to store predicted labels
+        actuals = []  # List to store true labels
 
+        # Iterate through the evaluation dataset
         for batch_idx, (data, target) in tqdm(
                 enumerate(data_loader),
                 desc='Testing',
@@ -93,7 +105,8 @@ def test_run(model, criterion, data_loader, is_cuda):
             preds.extend(pred)
             actuals.extend(target.cpu().numpy().tolist())
 
-            for i in range(target.shape[0]):  # Calculate per-class statistics
+            # Update per-class statistics
+            for i in range(target.shape[0]):
                 label = target[i]
                 class_correct[label] += 1 if pred[i] == label else 0
                 class_total[label] += 1
@@ -103,11 +116,35 @@ def test_run(model, criterion, data_loader, is_cuda):
     return test_loss, preds, actuals, class_correct, class_total
 
 
+
 def train(model, epochs, train_loader, optimizer, criterion, val_loader=None, is_cuda=False):
-    val_losses = []
-    losses = []
+    """
+    Train a neural network model for a specified number of epochs using the provided data and parameters.
+
+    Args:
+        model (torch.nn.Module): The neural network model to be trained.
+        epochs (int): The number of training epochs.
+        train_loader (torch.utils.data.DataLoader): DataLoader for the training dataset.
+        optimizer: The optimization algorithm for updating the model's parameters.
+        criterion: The loss function used for training.
+        val_loader (torch.utils.data.DataLoader, optional): DataLoader for the validation dataset. Default: None.
+        is_cuda (bool): A flag indicating whether to use GPU (CUDA) for training. Default: False.
+
+    Returns:
+        tuple: A tuple containing lists of training and validation losses.
+            - losses (list): List of training losses at each epoch.
+            - val_losses (list): List of validation losses at each epoch (if val_loader is provided).
+
+    Note:
+        This function iterates through the specified number of epochs and trains the model using the provided
+        training dataset and optimization parameters. If a validation DataLoader is provided, it computes
+        validation losses as well. The function returns the training and validation loss lists.
+    """
+    val_losses = []  # List to store validation losses (if validation data is provided)
+    losses = []  # List to store training losses
 
     for epoch in tqdm(range(epochs), desc="Epochs", total=epochs, leave=True, ncols=80):
+        # Train the model for one epoch
         train_loss = run(
             model=model,
             optimizer=optimizer,
@@ -117,7 +154,8 @@ def train(model, epochs, train_loader, optimizer, criterion, val_loader=None, is
             mode="Train"
         )
         losses.append(train_loss)
-        
+
+        # If validation data is provided, compute validation loss
         if val_loader:
             val_loss = run(
                 model=model,
@@ -127,20 +165,27 @@ def train(model, epochs, train_loader, optimizer, criterion, val_loader=None, is
                 mode="Val"
             )
             val_losses.append(val_loss)
-            print("Epoch: {} \Validation Loss: {:.6f}".format(epoch + 1, train_loss))
-            
+            print("Epoch: {} \tValidation Loss: {:.6f}".format(epoch + 1, val_loss))
+
         print("Epoch: {} \tTraining Loss: {:.6f}".format(epoch + 1, train_loss))
-    
+
     return losses, val_losses
+
 
 
 def plot_loss(losses, epochs):
     """
-    Plot the training and validation losses over epochs.
+    Generate a plot illustrating the training and validation losses across epochs.
 
     Args:
         losses (dict): A dictionary containing training and validation losses for different labels.
-        epochs (int): Total number of epochs.
+                       The keys represent label names, and the values are lists of corresponding losses.
+        epochs (int): Total number of epochs for which the losses are recorded.
+
+    Note:
+        This function requires the 'matplotlib' library to be installed in the environment.
+        It generates a line plot showing the changes in losses over the course of training.
+        The provided 'losses' dictionary should contain losses for different labels, allowing comparison.
     """
     plt.figure(figsize=(8, 5))
 
@@ -153,3 +198,4 @@ def plot_loss(losses, epochs):
     plt.legend()
     plt.grid(True)
     plt.show()
+
